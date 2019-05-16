@@ -1,6 +1,6 @@
 <template>
     <div style="flex:1">
-        <news></news>
+        <slider></slider>
     </div>
 </template>
 
@@ -8,13 +8,13 @@
 <style lang="scss" src="bui-weex/src/css/buiweex.scss"></style>
 
 <script>
-    import news from "./news.vue";
+    import slider from "./slider.vue";
     module.exports = {
         data () {
             return {}
         },
         components: {
-          news
+          slider
         }
     }
 </script>
