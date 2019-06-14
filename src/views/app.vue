@@ -1,20 +1,20 @@
 <template>
-    <div style="flex:1">
-        <slider></slider>
-    </div>
+  <div style="flex:1;background-color:#333">
+    <imageSlider></imageSlider>
+  </div>
 </template>
 
 <!--引入bui-weex样式文件-->
 <style lang="scss" src="bui-weex/src/css/buiweex.scss"></style>
 
 <script>
-    import slider from "./slider.vue";
-    module.exports = {
-        data () {
-            return {}
-        },
-        components: {
-          slider
-        }
+  import imageSlider from "./slider.vue";
+  module.exports = {
+    data() {
+      return {}
+    },
+    components: {
+      imageSlider
     }
+  }
 </script>
