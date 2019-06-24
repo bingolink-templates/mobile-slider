@@ -18,7 +18,8 @@
                 sliderItems: [],
                 channel: new BroadcastChannel("WidgetsMessage"),
                 ReplaceToDiskUri: "http://172.28.0.158:80",
-                regex: /((http(s)?:\/\/|www\.|WWW\.)([/\w-./@?_!~$%&=:#;+\-()]*)?)/g
+                URL_PATTERN: /((http(s)?:\/\/|www\.|WWW\.)([/\w-./@?_!~$%&=:#;+\-()]*)?)/g,
+                STORE_PATTERN: /(store:\/\/)/g
             };
         },
         methods: {
@@ -54,38 +55,20 @@
                 if (!str) return "";
                 return str.substring(str.lastIndexOf(key) + 1, str.length);
             },
-            formatAttach(resourceUrl, storeGetFile, downloadShareFile) {
-                var regxUrl = /(store:\/\/)/g,
-                    regxUrl2 = /(dropbox:\/\/)/g,
-                    resourceAtUrl = "";
-                var storeFileId, diskFileUrl;
-                if (resourceUrl.match(regxUrl)) {
+            getImageUrl(resourceUrl, accessToken, storeUri) {
+                var resourceAtUrl = '';
+                var storeFileId;
+                var storeGetFile = storeUri + '/store/getFile?fileId=';
+                if (resourceUrl.match(this.STORE_PATTERN)) {
                     if (resourceUrl.length > 20) {
-                        storeFileId = resourceUrl.replace(regxUrl, "");
-                        resourceAtUrl = storeGetFile + storeFileId;
+                        storeFileId = resourceUrl.replace(this.STORE_PATTERN, "");
+                        resourceAtUrl = storeGetFile + storeFileId + '&access_token=' + accessToken;
                     }
-                } else if (resourceUrl.match(regxUrl2)) {
-                    var spurls = resourceUrl.split(",");
-                    var shareId, baseUrl;
-                    try {
-                        shareId = this.getLastKeyStr(spurls[1], "/");
-                        baseUrl = spurls[1].substring(0, spurls[1].indexOf("/drive"));
-                    } catch (e) {
-                        baseUrl = downloadShareFile;
-                    }
-                    var diskUriReplaces = this.ReplaceToDiskUri || []; //需要替换为本地云盘地址的地址
-                    if (diskUriReplaces.indexOf(baseUrl) > -1) {
-                        //强制替换为云盘地址的地址
-                        resourceAtUrl = downloadShareFile + "?shareId=" + shareId;
-                    } else {
-                        resourceAtUrl = baseUrl + "/openapi/stream/share/download?shareId=" + shareId;
-                    }
-                    diskFileUrl = resourceAtUrl;
-                } else if (resourceUrl.match(this.regex)) {
+                } else if (resourceUrl.match(this.URL_PATTERN)) {
                     resourceAtUrl = resourceUrl;
                 } else {
                     storeFileId = resourceUrl.replace(/(^.+fileId=)/g, "");
-                    resourceAtUrl = path.api.storeGetFile + storeFileId;
+                    resourceAtUrl = storeGetFile + storeFileId + '&access_token=' + accessToken;
                 }
                 return resourceAtUrl;
             },
@@ -126,9 +109,7 @@
                                     let action = JSON.parse(element.action);
                                     sliderItemsObj["action"] = action.mobile_web ? action.mobile_web : action.web;
                                     sliderItemsObj["title"] = element.title;
-                                    sliderItemsObj["url"] = this.formatAttach(element.image, params.storeUri + "/store/getFile?fileId=", params.storeUri
-                                    );
-                                    sliderItemsObj["url"] = sliderItemsObj["url"] + "&size=0x71&access_token=" + token.accessToken;
+                                    sliderItemsObj["url"] = this.getImageUrl(element.image, token.accessToken, params.storeUri);
                                     sliderItemsObj["placeholder"] = this._getContext() + "/image/logo.png";
                                     sliderItemsArr.push(sliderItemsObj);
                                 }
