@@ -81,7 +81,7 @@
                             id: _params.id
                         });
                     });
-                }, 100);
+                }, 200);
             },
             getToken(success, error) {
                 return new Promise((resolve, reject) => {
