@@ -2,8 +2,8 @@
     <div ref="wrap">
         <!-- 轮播图 -->
         <div class="slider-common">
-            <image-slider style="height:400px;" auto="true" pos="1" :items="sliderItems" @onItemClick="sliderEvent"
-                radius="10" scaleType='FIT_XY'></image-slider>
+            <image-slider style="height: 420px"  auto="true" pos="1" :items="sliderItems" :sliderStyle="setWH"
+                @onItemClick="sliderEvent" scaleType='FIT_XY' radius="10"></image-slider>
         </div>
     </div>
 </template>
@@ -19,8 +19,14 @@
                 channel: new BroadcastChannel("WidgetsMessage"),
                 ReplaceToDiskUri: "http://172.28.0.158:80",
                 URL_PATTERN: /((http(s)?:\/\/|www\.|WWW\.)([/\w-./@?_!~$%&=:#;+\-()]*)?)/g,
-                STORE_PATTERN: /(store:\/\/)/g
+                STORE_PATTERN: /(store:\/\/)/g,
+                sliderStyle:{width:'750px',height:'1000px'}
             };
+        },
+        computed : {
+            setWH() {
+                return this.sliderStyle
+            }
         },
         methods: {
             _isHttpOrFile(path) {
@@ -72,17 +78,6 @@
                 }
                 return resourceAtUrl;
             },
-            broadcastWidgetHeight() {
-                let _params = this.$getPageParams();
-                setTimeout(() => {
-                    dom.getComponentRect(this.$refs.wrap, ret => {
-                        this.channel.postMessage({
-                            widgetHeight: ret.size.height,
-                            id: _params.id
-                        });
-                    });
-                }, 200);
-            },
             getToken(success, error) {
                 return new Promise((resolve, reject) => {
                     link.getToken([], res => {
@@ -109,8 +104,12 @@
                                     let action = JSON.parse(element.action);
                                     sliderItemsObj["action"] = action.mobile_web ? action.mobile_web : action.web;
                                     sliderItemsObj["title"] = element.title;
+                                    sliderItemsObj["sliderStyle"] = {
+                                        width: '750px',
+                                        height: '1000px'
+                                    };
                                     sliderItemsObj["url"] = this.getImageUrl(element.image, token.accessToken, params.storeUri);
-                                    sliderItemsObj["placeholder"] = this._getContext() + "/image/logo.png";
+                                    sliderItemsObj["placeholder"] = this._getContext() + "/image/ellipsis.png";
                                     sliderItemsArr.push(sliderItemsObj);
                                 }
                                 this.sliderItems = sliderItemsArr;
@@ -131,9 +130,21 @@
             },
             error() {
                 this.broadcastWidgetHeight();
+            },
+            broadcastWidgetHeight() {
+                let _params = this.$getPageParams();
+                setTimeout(() => {
+                    dom.getComponentRect(this.$refs.wrap, ret => {
+                        this.channel.postMessage({
+                            widgetHeight: ret.size.height,
+                            id: _params.id
+                        });
+                    });
+                }, 200);
             }
         },
         created() {
+            this.$fixViewport();
             linkapi.getLanguage(res => {
                 this.i18n = this.$window[res];
             });
@@ -153,6 +164,5 @@
 <style>
     .slider-common {
         background-color: #fff;
-        height: 420px;
     }
 </style>
