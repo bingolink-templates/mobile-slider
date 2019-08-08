@@ -2,7 +2,7 @@
     <div ref="wrap">
         <!-- 轮播图 -->
         <div class="slider-common">
-            <image-slider style="height: 420px"  auto="true" pos="1" :items="sliderItems" :sliderStyle="setWH"
+            <image-slider style="height: 420px" auto="true" pos="1" :items="sliderItems"
                 @onItemClick="sliderEvent" scaleType='FIT_XY' radius="10"></image-slider>
         </div>
     </div>
@@ -19,14 +19,8 @@
                 channel: new BroadcastChannel("WidgetsMessage"),
                 ReplaceToDiskUri: "http://172.28.0.158:80",
                 URL_PATTERN: /((http(s)?:\/\/|www\.|WWW\.)([/\w-./@?_!~$%&=:#;+\-()]*)?)/g,
-                STORE_PATTERN: /(store:\/\/)/g,
-                sliderStyle:{width:'750px',height:'1000px'}
+                STORE_PATTERN: /(store:\/\/)/g
             };
-        },
-        computed : {
-            setWH() {
-                return this.sliderStyle
-            }
         },
         methods: {
             _isHttpOrFile(path) {
@@ -104,10 +98,6 @@
                                     let action = JSON.parse(element.action);
                                     sliderItemsObj["action"] = action.mobile_web ? action.mobile_web : action.web;
                                     sliderItemsObj["title"] = element.title;
-                                    sliderItemsObj["sliderStyle"] = {
-                                        width: '750px',
-                                        height: '1000px'
-                                    };
                                     sliderItemsObj["url"] = this.getImageUrl(element.image, token.accessToken, params.storeUri);
                                     sliderItemsObj["placeholder"] = this._getContext() + "/image/ellipsis.png";
                                     sliderItemsArr.push(sliderItemsObj);
