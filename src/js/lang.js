@@ -4,7 +4,7 @@ module.exports = {
     "ErrorLoadData": "加载失败"
   },
   "zh-hk": {
-    "NoneData": "暫無任務",
+    "NoneData": "暫無数据",
     "ErrorLoadData": "加載失敗"
   },
   "en": {

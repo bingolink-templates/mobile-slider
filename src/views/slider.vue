@@ -1,8 +1,14 @@
 <template>
-    <div ref="wrap">
+    <div ref="wrap" class="main">
         <!-- 轮播图 -->
-        <div class="slider-common" :class="[isIPhone6sp ? 'slider-mar' : '']">
+        <div class="slider-common" :class="[isIPhone6sp ? 'slider-mar' : '']" v-if='sliderItems.length != 0'>
             <image-slider v-bind:style="{'height': honor8 ? '192wx' : '210wx'}" auto="true" pos="1" :items="sliderItems" @onItemClick="sliderEvent" scaleType='FIT_XY' radius="10"></image-slider>
+        </div>
+        <div class="no-data flex-ac flex-jc" v-bind:style="{'height': honor8 ? '192wx' : '210wx'}" v-if='sliderItems.length == 0 && isShow'>
+            <div class="flex-dr">
+                <bui-image src="/image/sleep1.png" width="21wx" height="21wx"></bui-image>
+                <text class="f26 c51 fw4 pl15 center-height ">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
+            </div>
         </div>
     </div>
 </template>
@@ -11,6 +17,7 @@
 const dom = weex.requireModule("dom");
 const link = weex.requireModule("LinkModule");
 const linkapi = require("linkapi");
+const storage = weex.requireModule('storage');
 export default {
     data() {
         return {
@@ -18,7 +25,10 @@ export default {
             channel: new BroadcastChannel("WidgetsMessage"),
             ReplaceToDiskUri: "http://172.28.0.158:80",
             URL_PATTERN: /((http(s)?:\/\/|www\.|WWW\.)([/\w-./@?_!~$%&=:#;+\-()]*)?)/g,
-            STORE_PATTERN: /(store:\/\/)/g
+            STORE_PATTERN: /(store:\/\/)/g,
+            i18n: '',
+            isShow: false,
+            isError: true,
         };
     },
     methods: {
@@ -32,7 +42,11 @@ export default {
         // 轮播图
         sliderEvent(one) {
             let url = this.sliderItems[one.pos].action;
-            linkapi.openLinkBroswer("", url);
+            if (url) {
+                linkapi.openLinkBroswer("", url);
+            } else {
+                this.$toast('地址不存在');
+            }
         },
         _getContext() {
             let url = weex.config.bundleUrl;
@@ -54,60 +68,102 @@ export default {
             if (!str) return "";
             return str.substring(str.lastIndexOf(key) + 1, str.length);
         },
-        getImageUrl(resourceUrl, accessToken, storeUri) {
-            var resourceAtUrl = '';
-            var storeFileId;
-            var storeGetFile = storeUri + '/store/getFile?fileId=';
-            if (resourceUrl.match(this.STORE_PATTERN)) {
-                if (resourceUrl.length > 20) {
-                    storeFileId = resourceUrl.replace(this.STORE_PATTERN, "");
-                    resourceAtUrl = storeGetFile + storeFileId + '&access_token=' + accessToken;
+        UrlAddParam(url, name, value) {
+            var r = url;
+            if (r != null && r != 'undefined' && r != "") {
+                value = encodeURIComponent(value);
+                var reg = new RegExp("(^|)" + name + "=([^&]*)(|$)");
+                var tmp = name + "=" + value;
+                if (url.match(reg) != null) {
+                    r = url.replace(eval(reg), tmp);
+                } else {
+                    if (url.match("[?]")) {
+                        r = url + "&" + tmp;
+                    } else {
+                        r = url + "?" + tmp;
+                    }
                 }
-            } else if (resourceUrl.match(this.URL_PATTERN)) {
-                resourceAtUrl = resourceUrl;
-            } else {
-                storeFileId = resourceUrl.replace(/(^.+fileId=)/g, "");
-                resourceAtUrl = storeGetFile + storeFileId + '&access_token=' + accessToken;
             }
-            return resourceAtUrl;
+            return r;
         },
-        getToken(success, error) {
-            return new Promise((resolve, reject) => {
-                link.getToken([], res => {
-                    resolve(res);
-                    success && success(res);
-                }, err => {
-                    reject(err);
-                    error && error(err);
+        getUrl(actionParams) {
+            if (!actionParams) return {};
+            var sPkey = /\s/;
+            var us = actionParams.split(sPkey);
+            var params = {};
+            for (var i = 0; i < us.length; i++) {
+                var u = us[i];
+                var idx = u.indexOf('=');
+                if (idx > -1) {
+                    params[u.substring(0, idx).trim()] = u.substring(idx + 1, u.length).trim();
                 }
-                );
-            });
+            }
+            var url = params.url;
+            delete params.url;
+            for (var key in params) {
+                url = this.UrlAddParam(url, key, params[key]);
+            }
+            return url;
+        },
+        getAction(action) {
+            if (typeof action === 'string') {
+                action = action.replace(/[\r\n]/g, ' ')
+                try {
+                    action = JSON.parse(action)
+                } catch (e) {
+                    action = eval('(' + action + ')');
+                }
+            }
+            var pcAction = action.pc || action.android;
+            if (pcAction.indexOf('[OpenUrl]') === 0) {
+                return this.getUrl(pcAction);
+            } else {
+                return ''
+            }
+        },
+        getStorage(callback) {
+            storage.getItem('sliderJLocalData', res => {
+                if (res.result == 'success') {
+                    var data = JSON.parse(res.data)
+                    this.isShow = true
+                    this.isError = true
+                    this.sliderItems = data;
+                    this.broadcastWidgetHeight()
+                } else {
+                    callback()
+                }
+            })
         },
         getSliderData() {
-            this.getToken(token => {
-                link.getServerConfigs([], params => {
-                    linkapi.get({
-                        url: params.comwidgetsUri + "/carousel/list"
-                    }).then(res => {
-                        if (res.code == 200) {
+            link.getServerConfigs([], params => {
+                linkapi.get({
+                    url: params.comwidgetsUri + "/carousel/list",
+                    data: {
+                        limit: 5
+                    }
+                }).then(res => {
+                    this.isShow = true
+                    this.isError = true
+                    if (res.code == 200) {
+                        try {
                             let sliderItemsArr = [];
                             for (let index = 0; index < res.data.length; index++) {
                                 const element = res.data[index];
                                 let sliderItemsObj = {};
-                                let action = JSON.parse(element.action);
-                                sliderItemsObj["action"] = action.mobile_web ? action.mobile_web : action.web;
+                                let action = this.getAction(element.action)
+                                sliderItemsObj["action"] = action
                                 sliderItemsObj["title"] = element.title;
-                                sliderItemsObj["url"] = this.getImageUrl(element.image, token.accessToken, params.storeUri);
+                                sliderItemsObj["url"] = element.image
                                 sliderItemsObj["placeholder"] = this._getContext() + "/image/ellipsis.png";
                                 sliderItemsArr.push(sliderItemsObj);
                             }
                             this.sliderItems = sliderItemsArr;
                             this.broadcastWidgetHeight();
+                            storage.setItem('sliderJLocalData', JSON.stringify(sliderItemsArr))
+                        } catch (error) {
+                            this.error();
                         }
-                    }, err => {
-                        this.error();
                     }
-                    );
                 }, err => {
                     this.error();
                 }
@@ -118,18 +174,27 @@ export default {
             );
         },
         error() {
+            this.isError = false
+            this.isShow = true
             this.broadcastWidgetHeight();
+        },
+        getComponentRect(_params) {
+            dom.getComponentRect(this.$refs.wrap, (ret) => {
+                this.channel.postMessage({
+                    widgetHeight: ret.size.height,
+                    id: _params.id
+                });
+            });
         },
         broadcastWidgetHeight() {
             let _params = this.$getPageParams();
+            // 防止高度通知失败
             setTimeout(() => {
-                dom.getComponentRect(this.$refs.wrap, ret => {
-                    this.channel.postMessage({
-                        widgetHeight: ret.size.height,
-                        id: _params.id
-                    });
-                });
-            }, 200);
+                this.getComponentRect(_params)
+            }, 200)
+            setTimeout(() => {
+                this.getComponentRect(_params)
+            }, 1200)
         }
     },
     created() {
@@ -141,12 +206,15 @@ export default {
         });
     },
     mounted() {
+        var that = this
         this.channel.onmessage = event => {
             if (event.data.action === "RefreshData") {
                 this.getSliderData();
             }
         };
-        this.getSliderData();
+        this.getStorage(function () {
+            that.getSliderData()
+        })
     }
 };
 </script>
@@ -157,7 +225,11 @@ export default {
     background-color: #fff;
 }
 .slider-mar {
-    /* height: 1000px; */
     padding: 10wx;
+}
+.no-data {
+    height: 70wx;
+    flex: 1;
+    background-color: #fff;
 }
 </style>
