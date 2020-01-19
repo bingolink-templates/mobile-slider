@@ -2,9 +2,9 @@
     <div ref="wrap" class="main">
         <!-- 轮播图 -->
         <div class="slider-common" :class="[isIPhone6sp ? 'slider-mar' : '']" v-if='sliderItems.length != 0'>
-            <image-slider v-bind:style="{'height': honor8 ? '192wx' : '210wx'}" auto="true" pos="1" :items="sliderItems" @onItemClick="sliderEvent" scaleType='FIT_XY' radius="10"></image-slider>
+            <bui-image-slider :imgHeight="height" v-bind:style="{'height': height}" imgWidth='750px' :items="sliderItems" @itemClick="sliderEvent" :indicatorStyle="indicatorStyle" resize='cover'></bui-image-slider>
         </div>
-        <div class="no-data flex-ac flex-jc" v-bind:style="{'height': honor8 ? '192wx' : '210wx'}" v-if='sliderItems.length == 0 && isShow'>
+        <div class="no-data flex-ac flex-jc" v-bind:style="{'height': height}" v-if='sliderItems.length == 0 && isShow'>
             <div class="flex-dr">
                 <bui-image src="/image/sleep1.png" width="21wx" height="21wx"></bui-image>
                 <text class="f26 c51 fw4 pl15 center-height ">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
@@ -21,6 +21,9 @@ const storage = weex.requireModule('storage');
 export default {
     data() {
         return {
+            indicatorStyle: {
+                // "opacity": "0"
+            },
             sliderItems: [],
             channel: new BroadcastChannel("WidgetsMessage"),
             ReplaceToDiskUri: "http://172.28.0.158:80",
@@ -29,7 +32,26 @@ export default {
             i18n: '',
             isShow: false,
             isError: true,
+            height: '160wx'
         };
+    },
+    created() {
+        this.isIPhone6sp = WXEnvironment && (WXEnvironment.deviceModel === 'iPhone8,2' || WXEnvironment.deviceModel === 'iPhone9,2')
+        this.$fixViewport();
+        linkapi.getLanguage(res => {
+            this.i18n = this.$window[res];
+        });
+    },
+    mounted() {
+        var that = this
+        this.channel.onmessage = event => {
+            if (event.data.action === "RefreshData") {
+                this.getSliderData();
+            }
+        };
+        this.getStorage(function () {
+            that.getSliderData()
+        })
     },
     methods: {
         _isHttpOrFile(path) {
@@ -125,6 +147,10 @@ export default {
             storage.getItem('sliderJLocalData', res => {
                 if (res.result == 'success') {
                     var data = JSON.parse(res.data)
+                    if (data.length == 0) {
+                        this.getSliderData()
+                        return
+                    }
                     this.isShow = true
                     this.isError = true
                     this.sliderItems = data;
@@ -196,25 +222,6 @@ export default {
                 this.getComponentRect(_params)
             }, 1200)
         }
-    },
-    created() {
-        this.isIPhone6sp = WXEnvironment && (WXEnvironment.deviceModel === 'iPhone8,2' || WXEnvironment.deviceModel === 'iPhone9,2')
-        this.honor8 = this.$isAndroid()
-        this.$fixViewport();
-        linkapi.getLanguage(res => {
-            this.i18n = this.$window[res];
-        });
-    },
-    mounted() {
-        var that = this
-        this.channel.onmessage = event => {
-            if (event.data.action === "RefreshData") {
-                this.getSliderData();
-            }
-        };
-        this.getStorage(function () {
-            that.getSliderData()
-        })
     }
 };
 </script>
