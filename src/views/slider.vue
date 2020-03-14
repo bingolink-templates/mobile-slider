@@ -2,7 +2,7 @@
     <div ref="wrap" class="main">
         <!-- 轮播图 -->
         <div class="slider-common" :class="[isIPhone6sp ? 'slider-mar' : '']" v-if='sliderItems.length != 0'>
-            <bui-image-slider :imgHeight="height" v-bind:style="{'height': height}" imgWidth='750px' :items="sliderItems" @itemClick="sliderEvent" :indicatorStyle="indicatorStyle" resize='cover'></bui-image-slider>
+            <bui-image-slider :imgHeight="height" :sliderStyle="{'height': height}" :authorStyle="authorStyle" imgWidth='750px' :items="sliderItems" @itemClick="sliderEvent" :indicatorStyle="indicatorStyle" resize='cover'></bui-image-slider>
         </div>
         <div class="no-data flex-ac flex-jc" v-bind:style="{'height': height}" v-if='sliderItems.length == 0 && isShow'>
             <div class="flex-dr">
@@ -21,9 +21,8 @@ const storage = weex.requireModule('storage');
 export default {
     data() {
         return {
-            indicatorStyle: {
-                // "opacity": "0"
-            },
+            indicatorStyle: {},
+            authorStyle: {},
             sliderItems: [],
             channel: new BroadcastChannel("WidgetsMessage"),
             ReplaceToDiskUri: "http://172.28.0.158:80",
@@ -32,7 +31,7 @@ export default {
             i18n: '',
             isShow: false,
             isError: true,
-            height: '160wx'
+            height: '208wx'
         };
     },
     created() {
@@ -41,6 +40,19 @@ export default {
         linkapi.getLanguage(res => {
             this.i18n = this.$window[res];
         });
+
+        if (this.$isIPhone()) {
+            this.indicatorStyle['left'] = '300px'
+            this.authorStyle['width'] = '612px'
+        } else if (this.$isIPad()) {
+            this.indicatorStyle['left'] = '140wx'
+            this.authorStyle['width'] = '308wx'
+            this.authorStyle['fontSize'] = '16wx'
+        } else {
+            this.indicatorStyle['left'] = '274px'
+            this.authorStyle['width'] = '552px'
+        }
+
     },
     mounted() {
         var that = this
@@ -62,8 +74,8 @@ export default {
             );
         },
         // 轮播图
-        sliderEvent(one) {
-            let url = this.sliderItems[one.pos].action;
+        sliderEvent(e, index) {
+            let url = this.sliderItems[index].action;
             if (url) {
                 linkapi.openLinkBroswer("", url);
             } else {
