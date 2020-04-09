@@ -2,9 +2,9 @@
     <div ref="wrap" class="main">
         <!-- 轮播图 -->
         <div class="slider-common" :class="[isIPhone6sp ? 'slider-mar' : '']" v-if='sliderItems.length != 0'>
-            <image-slider v-bind:style="{'height': honor8 ? '192wx' : '210wx'}" auto="true" pos="1" :items="sliderItems" @onItemClick="sliderEvent" scaleType='FIT_XY' radius="10"></image-slider>
+            <image-slider v-bind:style="{'height': ipadHeight}" auto="true" pos="1" :items="sliderItems" @onItemClick="sliderEvent" scaleType='FIT_XY' radius="10"></image-slider>
         </div>
-        <div class="no-data flex-ac flex-jc" v-bind:style="{'height': honor8 ? '192wx' : '210wx'}" v-if='sliderItems.length == 0 && isShow'>
+        <div class="no-data flex-ac flex-jc" v-bind:style="{'height': ipadHeight}" v-if='sliderItems.length == 0 && isShow'>
             <div class="flex-dr">
                 <bui-image src="/image/sleep1.png" width="21wx" height="21wx"></bui-image>
                 <text class="f26 c51 fw4 pl15 center-height ">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
@@ -22,6 +22,18 @@ var uamFileIdUiDownload = '/ui/download?fileId=${id}&access=anonymous';
 export default {
     data() {
         return {
+            // sliderItems: [
+            //     {
+            //         url: 'https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4210483875,3240000743&fm=111&gp=0.jpg',
+            //         title: '123'
+            //     },{
+            //         url: 'https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4210483875,3240000743&fm=111&gp=0.jpg',
+            //         title: '123'
+            //     },{
+            //         url: 'https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4210483875,3240000743&fm=111&gp=0.jpg',
+            //         title: '123'
+            //     },
+            // ],
             sliderItems: [],
             channel: new BroadcastChannel("WidgetsMessage"),
             ReplaceToDiskUri: "http://172.28.0.158:80",
@@ -30,6 +42,7 @@ export default {
             i18n: '',
             isShow: false,
             isError: true,
+            ipadHeight: ''
         };
     },
     methods: {
@@ -211,11 +224,24 @@ export default {
     },
     created() {
         this.isIPhone6sp = WXEnvironment && (WXEnvironment.deviceModel === 'iPhone8,2' || WXEnvironment.deviceModel === 'iPhone9,2')
-        this.honor8 = this.$isAndroid()
         this.$fixViewport();
         linkapi.getLanguage(res => {
             this.i18n = this.$window[res];
         });
+        
+        if(this.$isAndroid()){
+            this.ipadHeight = '192wx'
+        }else{
+            this.ipadHeight = '210wx'
+        }
+        if (this.$isIPad()) {
+            link.getSystemSize(
+                [],
+                res => {
+                    this.ipadHeight = res.LeftScreenSize.Width * res.imageScale  + 'wx'
+                }
+            );
+        }
     },
     mounted() {
         var that = this
@@ -224,6 +250,7 @@ export default {
                 this.getSliderData();
             }
         };
+        // this.broadcastWidgetHeight()
         this.getStorage(function () {
             that.getSliderData()
         })
