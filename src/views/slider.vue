@@ -18,6 +18,7 @@ const dom = weex.requireModule("dom");
 const link = weex.requireModule("LinkModule");
 const linkapi = require("linkapi");
 const storage = weex.requireModule('storage');
+var uamFileIdUiDownload = '/ui/download?fileId=${id}&access=anonymous';
 export default {
     data() {
         return {
@@ -191,7 +192,7 @@ export default {
                                 let action = this.getAction(element.action)
                                 sliderItemsObj["action"] = action
                                 sliderItemsObj["title"] = element.title;
-                                sliderItemsObj["url"] = element.image
+                                sliderItemsObj["url"] = this.parseImgUrl(element.image, params.uamUri || params.uamUrl);
                                 sliderItemsObj["placeholder"] = this._getContext() + "/image/ellipsis.png";
                                 sliderItemsArr.push(sliderItemsObj);
                             }
@@ -210,6 +211,17 @@ export default {
                 this.error();
             }
             );
+        },
+        parseImgUrl(url, uam) {
+            if (!url) return url;
+            if (url.match(/^https?:\/\//g)) {
+                return url
+            }
+            if (url.startsWith("store://")) {
+                url = url.replace("store://", "");
+            }
+            url = (uam + uamFileIdUiDownload).replace('${id}', url);
+            return url;
         },
         error() {
             this.isError = false
