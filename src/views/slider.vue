@@ -22,18 +22,6 @@ var uamFileIdUiDownload = '/ui/download?fileId=${id}&access=anonymous';
 export default {
     data() {
         return {
-            // sliderItems: [
-            //     {
-            //         url: 'https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4210483875,3240000743&fm=111&gp=0.jpg',
-            //         title: '123'
-            //     },{
-            //         url: 'https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4210483875,3240000743&fm=111&gp=0.jpg',
-            //         title: '123'
-            //     },{
-            //         url: 'https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4210483875,3240000743&fm=111&gp=0.jpg',
-            //         title: '123'
-            //     },
-            // ],
             sliderItems: [],
             channel: new BroadcastChannel("WidgetsMessage"),
             ReplaceToDiskUri: "http://172.28.0.158:80",
@@ -150,10 +138,12 @@ export default {
         },
         getSliderData() {
             link.getServerConfigs([], params => {
+                let urlParams = this.resolveUrlParams(weex.config.bundleUrl)
                 linkapi.get({
                     url: params.comwidgetsUri + "/carousel/list",
                     data: {
-                        limit: 5
+                        limit: 5,
+                        eCode: urlParams.ecode ? urlParams.ecode : 'localhost'
                     }
                 }).then(res => {
                     this.isShow = true
@@ -186,6 +176,28 @@ export default {
                 this.error();
             }
             );
+        },
+        resolveUrlParams(url) {
+            if (!url) return {};
+            url = url + "";
+            var index = url.indexOf("?");
+            if (index > -1) {
+                url = url.substring(index + 1, url.length);
+            }
+            var pairs = url.split("&"),
+                params = {};
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i];
+                var indexEq = pair.indexOf("="),
+                    key = pair,
+                    value = null;
+                if (indexEq > 0) {
+                    key = pair.substring(0, indexEq);
+                    value = pair.substring(indexEq + 1, pair.length);
+                }
+                params[key] = value;
+            }
+            return params;
         },
         parseImgUrl(url, uam) {
             if (!url) return url;
@@ -251,8 +263,8 @@ export default {
             }
         };
         // this.broadcastWidgetHeight()
-        this.getStorage(function () {
             that.getSliderData()
+        this.getStorage(function () {
         })
     }
 };
