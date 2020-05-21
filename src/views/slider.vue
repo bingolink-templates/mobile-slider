@@ -30,7 +30,8 @@ export default {
             i18n: '',
             isShow: false,
             isError: true,
-            ipadHeight: ''
+            ipadHeight: '',
+            urlParams: {}
         };
     },
     methods: {
@@ -124,7 +125,9 @@ export default {
             }
         },
         getStorage(callback) {
-            storage.getItem('sliderJLocalData', res => {
+            let pageId = this.urlParams.userId ? this.urlParams.userId : ''
+            let ecode = this.urlParams.ecode ? this.urlParams.ecode : 'localhost'
+            storage.getItem('sliderJLocalData' + ecode + pageId, res => {
                 if (res.result == 'success') {
                     var data = JSON.parse(res.data)
                     this.isShow = true
@@ -138,12 +141,11 @@ export default {
         },
         getSliderData() {
             link.getServerConfigs([], params => {
-                let urlParams = this.resolveUrlParams(weex.config.bundleUrl)
                 linkapi.get({
                     url: params.comwidgetsUri + "/carousel/list",
                     data: {
                         limit: 5,
-                        eCode: urlParams.ecode ? urlParams.ecode : 'localhost'
+                        eCode: this.urlParams.ecode ? this.urlParams.ecode : 'localhost'
                     }
                 }).then(res => {
                     this.isShow = true
@@ -163,7 +165,8 @@ export default {
                             }
                             this.sliderItems = sliderItemsArr;
                             this.broadcastWidgetHeight();
-                            storage.setItem('sliderJLocalData', JSON.stringify(sliderItemsArr))
+                            let pageId = this.urlParams.userId ? this.urlParams.userId : ''
+                            storage.setItem('sliderJLocalData' + pageId, JSON.stringify(sliderItemsArr))
                         } catch (error) {
                             this.error();
                         }
@@ -254,6 +257,7 @@ export default {
                 }
             );
         }
+        this.urlParams = this.resolveUrlParams(weex.config.bundleUrl)
     },
     mounted() {
         var that = this
@@ -262,9 +266,8 @@ export default {
                 this.getSliderData();
             }
         };
-        // this.broadcastWidgetHeight()
-            that.getSliderData()
         this.getStorage(function () {
+            that.getSliderData()
         })
     }
 };
