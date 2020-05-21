@@ -166,7 +166,8 @@ export default {
                             this.sliderItems = sliderItemsArr;
                             this.broadcastWidgetHeight();
                             let pageId = this.urlParams.userId ? this.urlParams.userId : ''
-                            storage.setItem('sliderJLocalData' + pageId, JSON.stringify(sliderItemsArr))
+                            let ecode = this.urlParams.ecode ? this.urlParams.ecode : 'localhost'
+                            storage.setItem('sliderJLocalData' + ecode + pageId, JSON.stringify(sliderItemsArr))
                         } catch (error) {
                             this.error();
                         }
