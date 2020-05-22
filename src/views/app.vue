@@ -1,5 +1,5 @@
 <template>
-  <div style="flex:1;background-color:#fff">
+  <div style="flex:1;">
     <imageSlider></imageSlider>
   </div>
 </template>
