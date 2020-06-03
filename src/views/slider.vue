@@ -6,7 +6,6 @@
         </div>
         <div class="no-data flex-ac flex-jc" v-bind:style="{'height': ipadHeight}" v-if='sliderItems.length == 0 && isShow'>
             <div class="flex-dr">
-                <bui-image src="/image/sleep1.png" width="21wx" height="21wx"></bui-image>
                 <text class="f26 c51 fw4 pl15 center-height ">{{isError?i18n.NoneData:i18n.ErrorLoadData}}</text>
             </div>
         </div>
@@ -33,6 +32,39 @@ export default {
             ipadHeight: '',
             urlParams: {}
         };
+    },
+    created() {
+        this.isIPhone6sp = WXEnvironment && (WXEnvironment.deviceModel === 'iPhone8,2' || WXEnvironment.deviceModel === 'iPhone9,2')
+        this.$fixViewport();
+        linkapi.getLanguage(res => {
+            this.i18n = this.$window[res];
+        });
+        
+        if(this.$isAndroid()){
+            this.ipadHeight = '192wx'
+        }else{
+            this.ipadHeight = '210wx'
+        }
+        if (this.$isIPad()) {
+            link.getSystemSize(
+                [],
+                res => {
+                    this.ipadHeight = res.LeftScreenSize.Width * res.imageScale  + 'wx'
+                }
+            );
+        }
+        this.urlParams = this.resolveUrlParams(weex.config.bundleUrl)
+    },
+    mounted() {
+        var that = this
+        this.channel.onmessage = event => {
+            if (event.data.action === "RefreshData") {
+                this.getSliderData();
+            }
+        };
+        this.getStorage(function () {
+            that.getSliderData()
+        })
     },
     methods: {
         _isHttpOrFile(path) {
@@ -237,39 +269,6 @@ export default {
                 this.getComponentRect(_params)
             }, 1200)
         }
-    },
-    created() {
-        this.isIPhone6sp = WXEnvironment && (WXEnvironment.deviceModel === 'iPhone8,2' || WXEnvironment.deviceModel === 'iPhone9,2')
-        this.$fixViewport();
-        linkapi.getLanguage(res => {
-            this.i18n = this.$window[res];
-        });
-        
-        if(this.$isAndroid()){
-            this.ipadHeight = '192wx'
-        }else{
-            this.ipadHeight = '210wx'
-        }
-        if (this.$isIPad()) {
-            link.getSystemSize(
-                [],
-                res => {
-                    this.ipadHeight = res.LeftScreenSize.Width * res.imageScale  + 'wx'
-                }
-            );
-        }
-        this.urlParams = this.resolveUrlParams(weex.config.bundleUrl)
-    },
-    mounted() {
-        var that = this
-        this.channel.onmessage = event => {
-            if (event.data.action === "RefreshData") {
-                this.getSliderData();
-            }
-        };
-        this.getStorage(function () {
-            that.getSliderData()
-        })
     }
 };
 </script>
