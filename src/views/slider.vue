@@ -62,8 +62,8 @@ export default {
                 this.getSliderData();
             }
         };
-        this.getStorage(function () {
             that.getSliderData()
+        this.getStorage(function () {
         })
     },
     methods: {
